@@ -18,6 +18,9 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      - name: Versions
+        run: node -v && npm -v
+
       - name: Install
         run: npm ci
 
