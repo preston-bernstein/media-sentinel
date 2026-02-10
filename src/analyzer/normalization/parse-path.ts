@@ -2,8 +2,10 @@ import type { MediaFile, MediaRootConfig } from "../../types.js";
 
 /** Plex-style movie: "Title (Year)" or just "Title". */
 const MOVIE_DIR_REGEX = /^(.+?)\s*\((\d{4})\)$/;
-/** Episode in filename: S01E01 or 1x01 */
-const EPISODE_REGEX = /S(?<season>\d{1,2})E(?<episode>\d{1,2})|(?<season>\d{1,2})x(?<episode>\d{1,2})/i;
+/** Episode in filename: S01E01 */
+const EPISODE_S_E_REGEX = /S(?<season>\d{1,2})E(?<episode>\d{1,2})/i;
+/** Episode in filename: 1x01 */
+const EPISODE_X_REGEX = /(?<season>\d{1,2})x(?<episode>\d{1,2})/i;
 
 export interface MovieRef {
   movieKey: string;
@@ -72,7 +74,7 @@ export function parseEpisodeFile(
   _root: MediaRootConfig
 ): EpisodeRef | null {
   const base = basenameNoExt(file);
-  const epMatch = base.match(EPISODE_REGEX);
+  const epMatch = base.match(EPISODE_S_E_REGEX) ?? base.match(EPISODE_X_REGEX);
   if (!epMatch?.groups) return null;
 
   const season = parseInt(epMatch.groups.season ?? "0", 10);
