@@ -1,0 +1,8 @@
+{
+  "roots": [
+    { "name": "movies", "path": "/volume1/Media/Movies", "kind": "movies" }
+  ],
+  "globalExcludes": ["**/temp/**"],
+  "concurrency": 8,
+  "maxDepth": 10
+}

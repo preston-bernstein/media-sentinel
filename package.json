@@ -1,0 +1,40 @@
+{
+  "name": "media-sentinel",
+  "version": "0.1.0",
+  "description": "Media library integrity checker for Synology NAS (Plex-oriented)",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "media-sentinel": "dist/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "lint": "eslint src tests --ext .ts"
+  },
+  "keywords": [
+    "media",
+    "plex",
+    "nas",
+    "integrity",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "yaml": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@vitest/coverage-v8": "^2.1.9",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.6"
+  }
+}

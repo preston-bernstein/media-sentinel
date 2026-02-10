@@ -1,0 +1,29 @@
+# Media Sentinel — example config for Synology NAS (DS1522+)
+# Base path: /volume1/Media
+# Copy to e.g. /volume1/config/media-sentinel.yaml and adjust if needed.
+
+roots:
+  - name: movies
+    path: /volume1/Media/Movies
+    kind: movies
+    namingStyle: plex-movies
+
+  - name: tv
+    path: /volume1/Media/TV Shows
+    kind: tv
+    namingStyle: plex-tv
+
+  - name: music
+    path: /volume1/Media/Music
+    kind: music
+
+# Optional: global exclude patterns (temp dirs, incomplete downloads, etc.)
+# globalExcludes:
+#   - "**/@eaDir/**"
+#   - "**/.DS_Store"
+#   - "**/*.partial"
+#   - "**/temp/**"
+
+# Optional: performance tuning for large libraries
+# concurrency: 16
+# maxDepth: 20
