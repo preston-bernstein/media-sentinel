@@ -1,8 +1,9 @@
 # Media Sentinel
 
-[![CI](https://github.com/prestonbernstein/media-sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/prestonbernstein/media-sentinel/actions/workflows/ci.yml)
+[![CI](https://github.com/preston-bernstein/media-sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/preston-bernstein/media-sentinel/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25%20lines%20%7C%2094%25%20branches-brightgreen)](./vitest.config.ts)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 CLI-first media library integrity checker for **Synology NAS** (DS1522+), aimed at Plex-style layouts: **Movies**, **TV Shows**, **Music** under a single media root.
 
@@ -168,8 +169,8 @@ Coverage is enforced: **100%** lines, statements, and functions; **94%** branche
 
 If you fork this repo, update the CI badge in this README to your repo:
 
-- Replace `prestonbernstein/media-sentinel` in the badge and link URLs with `your-username/your-repo`.
+- Replace `preston-bernstein/media-sentinel` in the badge and link URLs with `your-username/your-repo`.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
