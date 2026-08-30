@@ -5,27 +5,22 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  ci:
+    uses: preston-bernstein/ci-workflows/.github/workflows/node.yml@v1
+    with:
+      node-versions: '["20"]'
+      test: npm run test:coverage
+      build: npm run build
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Versions
-        run: node -v && npm -v
-
-      - name: Install
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Test (coverage)
-        run: npm run test:coverage
+  workflows:
+    uses: preston-bernstein/ci-workflows/.github/workflows/actions-lint.yml@v1
