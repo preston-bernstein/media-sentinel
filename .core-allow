@@ -1,0 +1,2 @@
+# Existing findings accepted in the pack-compliance pass. One per line: <check> <path> <reason>
+name src/analyzer/rules/rule-utils.ts existing name; rename when the module is next reworked
