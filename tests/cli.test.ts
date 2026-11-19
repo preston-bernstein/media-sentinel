@@ -16,7 +16,7 @@ describe("CLI", () => {
 
   it("runEntryPoint calls main when argv[1] is index path", async () => {
     const exit = vi.spyOn(process, "exit").mockImplementation(((code: number) => {
-      throw { code };
+      throw Object.assign(new Error("process.exit"), { code });
     }) as () => never);
     const orig = process.argv.slice();
     process.argv = [process.argv[0], path.resolve(indexFilename), "--version"];
@@ -27,7 +27,7 @@ describe("CLI", () => {
 
   it("main() with --version exits with 0", async () => {
     const exit = vi.spyOn(process, "exit").mockImplementation(((code: number) => {
-      throw { code };
+      throw Object.assign(new Error("process.exit"), { code });
     }) as () => never);
     await expect(main(["--version"])).rejects.toMatchObject({ code: 0 });
     exit.mockRestore();
@@ -36,6 +36,13 @@ describe("CLI", () => {
   it("runCli --version returns 0", async () => {
     const code = await runCli(["--version"]);
     expect(code).toBe(0);
+  });
+
+});
+
+describe("CLI (part 2)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("runCli --help returns 0", async () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parseMovieFile, parseEpisodeFile } from "../src/analyzer/normalization/parse-path.js";
 import { buildLogicalIndex } from "../src/analyzer/normalization/build-index.js";
-import type { MediaFile, ScanResult, Config } from "../src/types.js";
+import type { MediaFile, ScanResult } from "../src/types.js";
 
 function file(
   overrides: Partial<MediaFile> & { rootName: string; relativePath: string }
@@ -31,7 +31,7 @@ describe("parseMovieFile", () => {
       relativePath: "Inception (2010)/Inception (2010).mkv",
       kind: "video",
     });
-    const ref = parseMovieFile(f, rootMovies);
+    const ref = parseMovieFile(f);
     expect(ref?.movieKey).toBe("Inception (2010)");
     expect(ref?.year).toBe(2010);
   });
@@ -43,7 +43,7 @@ describe("parseMovieFile", () => {
       folderSegments: [],
       kind: "video",
     });
-    const ref = parseMovieFile(f, rootMovies);
+    const ref = parseMovieFile(f);
     expect(ref?.movieKey).toBe("Inception (2010)");
   });
 
@@ -53,7 +53,7 @@ describe("parseMovieFile", () => {
       relativePath: "Inception (2010)/Inception (2010).nfo",
       kind: "nfo",
     });
-    const ref = parseMovieFile(f, rootMovies);
+    const ref = parseMovieFile(f);
     expect(ref?.role).toBe("nfo");
   });
 
@@ -64,7 +64,7 @@ describe("parseMovieFile", () => {
       extension: "jpg",
       kind: "image",
     });
-    const ref = parseMovieFile(f, rootMovies);
+    const ref = parseMovieFile(f);
     expect(ref?.role).toBe("other");
   });
 });
@@ -76,7 +76,7 @@ describe("parseEpisodeFile", () => {
       relativePath: "Show/Season 01/Show - S01E01.mkv",
       kind: "video",
     });
-    const ref = parseEpisodeFile(f, rootTv);
+    const ref = parseEpisodeFile(f);
     expect(ref?.episodeKey).toBe("Show-S01E01");
     expect(ref?.seasonNumber).toBe(1);
     expect(ref?.episodeNumber).toBe(1);
@@ -88,7 +88,7 @@ describe("parseEpisodeFile", () => {
       relativePath: "Show/random.mkv",
       kind: "video",
     });
-    expect(parseEpisodeFile(f, rootTv)).toBeNull();
+    expect(parseEpisodeFile(f)).toBeNull();
   });
 
   it("returns null for S00E00", () => {
@@ -97,7 +97,7 @@ describe("parseEpisodeFile", () => {
       relativePath: "Show/S00E00.mkv",
       kind: "video",
     });
-    expect(parseEpisodeFile(f, rootTv)).toBeNull();
+    expect(parseEpisodeFile(f)).toBeNull();
   });
 
   it("uses Unknown when folderSegments empty", () => {
@@ -107,7 +107,7 @@ describe("parseEpisodeFile", () => {
       folderSegments: [],
       kind: "video",
     });
-    const ref = parseEpisodeFile(f, rootTv);
+    const ref = parseEpisodeFile(f);
     expect(ref?.seriesTitle).toBe("Unknown");
   });
 });
@@ -143,6 +143,9 @@ describe("buildLogicalIndex", () => {
     expect(index.unclassifiedSubtitles.length).toBe(1);
   });
 
+});
+
+describe("buildLogicalIndex (part 2)", () => {
   it("assigns nfo and other to episode item", () => {
     const scan: ScanResult = {
       kind: "scan",
@@ -176,6 +179,9 @@ describe("buildLogicalIndex", () => {
     expect(ep?.otherFiles.length).toBe(1);
   });
 
+});
+
+describe("buildLogicalIndex (part 3)", () => {
   it("assigns nfo and other to movie item", () => {
     const scan: ScanResult = {
       kind: "scan",

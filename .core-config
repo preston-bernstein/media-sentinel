@@ -1,0 +1,1 @@
+CORE_EXCLUDE=**/scripts/**  # scripts/ holds only verbatim copies of the pack gate scripts and Vale styles, kept byte-identical to the pack

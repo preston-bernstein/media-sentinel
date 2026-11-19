@@ -1,7 +1,7 @@
 import type { RuleContext, Issue } from "../../types.js";
-import { toIssueLocation, getRuleSeverity } from "./rule-utils.js";
+import { toIssueLocation, getRuleSeverity } from "./issue-location.js";
 
-export async function ruleDuplicates(ctx: RuleContext): Promise<Issue[]> {
+export function ruleDuplicates(ctx: RuleContext): Issue[] {
   const issues: Issue[] = [];
   const sev = getRuleSeverity(ctx, "duplicates", "warning");
 

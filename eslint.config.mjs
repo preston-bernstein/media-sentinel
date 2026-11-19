@@ -4,6 +4,7 @@
 import js from "@eslint/js"
 import tseslint from "typescript-eslint"
 import { defineConfig } from "eslint/config"
+import globals from "globals"
 
 export default defineConfig(
   { ignores: ["dist", "coverage", "node_modules"] },
@@ -39,6 +40,7 @@ export default defineConfig(
   {
     // Plain JS config files are not in the TS project.
     files: ["**/*.{js,mjs,cjs}"],
+    languageOptions: { globals: { ...globals.node } },
     extends: [tseslint.configs.disableTypeChecked],
   },
 )

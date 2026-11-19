@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -30,7 +30,8 @@ const sampleConfig: Config = {
   roots: [{ name: "movies", path: "/media/movies", kind: "movies" }],
 };
 
-const noopLogger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
+const noop = (): void => undefined;
+const noopLogger = { debug: noop, info: noop, warn: noop, error: noop };
 
 describe("reporter", () => {
   it("buildReportData groups issues by kind", () => {
@@ -51,11 +52,14 @@ describe("reporter", () => {
   it("renderJsonReport produces valid JSON", () => {
     const data = buildReportData(sampleAnalysis, sampleConfig);
     const json = renderJsonReport(data);
-    const parsed = JSON.parse(json);
+    const parsed = JSON.parse(json) as { analysisStats: { numIssues: number }; issues: unknown };
     expect(parsed.analysisStats.numIssues).toBe(1);
     expect(Array.isArray(parsed.issues)).toBe(true);
   });
 
+});
+
+describe("reporter (part 2)", () => {
   it("runReport writes JSON to file when json and outputPath and !dryRun", async () => {
     const tmp = path.join(os.tmpdir(), `ms-report-json-${Date.now()}.json`);
     await runReport(sampleAnalysis, sampleConfig, {
@@ -65,7 +69,7 @@ describe("reporter", () => {
       dryRun: false,
     });
     const content = await fs.readFile(tmp, "utf8");
-    expect(JSON.parse(content).analysisStats.numIssues).toBe(1);
+    expect((JSON.parse(content) as { analysisStats: { numIssues: number } }).analysisStats.numIssues).toBe(1);
     await fs.rm(tmp, { force: true });
   });
 
@@ -79,7 +83,7 @@ describe("reporter", () => {
       });
       expect(write).toHaveBeenCalled();
       const out = write.mock.calls[0][0] as string;
-      expect(JSON.parse(out).analysisStats.numIssues).toBe(1);
+      expect((JSON.parse(out) as { analysisStats: { numIssues: number } }).analysisStats.numIssues).toBe(1);
     } finally {
       write.mockRestore();
     }
