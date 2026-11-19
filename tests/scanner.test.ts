@@ -6,7 +6,8 @@ import { scanMediaLibrary } from "../src/scanner/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.join(__dirname, "fixtures", "simple-library");
-const noopLogger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
+const noop = (): void => undefined;
+const noopLogger = { debug: noop, info: noop, warn: noop, error: noop };
 
 describe("scanner", () => {
   it("scans a small library and classifies files", async () => {

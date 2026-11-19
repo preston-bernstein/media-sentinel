@@ -1,4 +1,4 @@
-import type { MediaFile, MediaRootConfig } from "../../types.js";
+import type { MediaFile } from "../../types.js";
 
 /** Plex-style movie: "Title (Year)" or just "Title". */
 const MOVIE_DIR_REGEX = /^(.+?)\s*\((\d{4})\)$/;
@@ -7,11 +7,13 @@ const EPISODE_S_E_REGEX = /S(?<season>\d{1,2})E(?<episode>\d{1,2})/i;
 /** Episode in filename: 1x01 */
 const EPISODE_X_REGEX = /(?<season>\d{1,2})x(?<episode>\d{1,2})/i;
 
+type FileRole = "video" | "subtitle" | "nfo" | "other";
+
 export interface MovieRef {
   movieKey: string;
   title: string;
   year?: number;
-  role: "video" | "subtitle" | "nfo" | "other";
+  role: FileRole;
 }
 
 export interface EpisodeRef {
@@ -20,7 +22,7 @@ export interface EpisodeRef {
   seasonNumber: number;
   episodeNumber: number;
   episodeKey: string;
-  role: "video" | "subtitle" | "nfo" | "other";
+  role: FileRole;
 }
 
 function basenameNoExt(file: MediaFile): string {
@@ -30,51 +32,48 @@ function basenameNoExt(file: MediaFile): string {
   return lastDot > 0 ? name.slice(0, lastDot) : name;
 }
 
-function getRole(file: MediaFile): MovieRef["role"] | EpisodeRef["role"] {
+function getRole(file: MediaFile): FileRole {
   switch (file.kind) {
     case "video":
-      return "video";
     case "subtitle":
-      return "subtitle";
     case "nfo":
-      return "nfo";
-    default:
+      return file.kind;
+    case "audio":
+    case "image":
+    case "other":
       return "other";
   }
 }
 
-export function parseMovieFile(
-  file: MediaFile,
-  _root: MediaRootConfig
-): MovieRef | null {
+function movieYear(...matches: (RegExpExecArray | null)[]): number | undefined {
+  const text = matches.map((m) => m?.[2]).find(Boolean);
+  return text ? parseInt(text, 10) : undefined;
+}
+
+/** Normalizes a "Title (Year)" match into its key form. */
+function movieKeyFromMatch(match: RegExpExecArray | null): string | null {
+  return match ? `${match[1]?.trim() ?? ""} (${match[2] ?? ""})` : null;
+}
+
+export function parseMovieFile(file: MediaFile): MovieRef | null {
   const base = basenameNoExt(file);
-  const dirMatch = file.folderSegments.length > 0
-    ? file.folderSegments[file.folderSegments.length - 1]?.match(MOVIE_DIR_REGEX)
-    : null;
-  const folderKey = dirMatch ? `${dirMatch[1].trim()} (${dirMatch[2]})` : null;
-  const fileMatch = base.match(MOVIE_DIR_REGEX);
-  const fileKey = fileMatch ? `${fileMatch[1].trim()} (${fileMatch[2]})` : null;
+  const lastFolder = file.folderSegments[file.folderSegments.length - 1];
+  const dirMatch = lastFolder === undefined ? null : MOVIE_DIR_REGEX.exec(lastFolder);
+  const fileMatch = MOVIE_DIR_REGEX.exec(base);
 
   if (file.kind === "video" && !dirMatch && !fileMatch) return null;
 
-  const movieKey = folderKey ?? fileKey ?? (base || "unknown");
-  const title = fileMatch?.[1]?.trim() ?? dirMatch?.[1]?.trim() ?? base;
-  const year = fileMatch?.[2] ? parseInt(fileMatch[2], 10) : dirMatch?.[2] ? parseInt(dirMatch[2], 10) : undefined;
-
   return {
-    movieKey,
-    title,
-    year,
+    movieKey: movieKeyFromMatch(dirMatch) ?? movieKeyFromMatch(fileMatch) ?? (base || "unknown"),
+    title: (fileMatch ?? dirMatch)?.[1]?.trim() ?? base,
+    year: movieYear(fileMatch, dirMatch),
     role: getRole(file),
   };
 }
 
-export function parseEpisodeFile(
-  file: MediaFile,
-  _root: MediaRootConfig
-): EpisodeRef | null {
+export function parseEpisodeFile(file: MediaFile): EpisodeRef | null {
   const base = basenameNoExt(file);
-  const epMatch = base.match(EPISODE_S_E_REGEX) ?? base.match(EPISODE_X_REGEX);
+  const epMatch = EPISODE_S_E_REGEX.exec(base) ?? EPISODE_X_REGEX.exec(base);
   if (!epMatch?.groups) return null;
 
   const season = parseInt(epMatch.groups.season ?? "0", 10);

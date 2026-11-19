@@ -1,7 +1,7 @@
 import type { RuleContext, Issue } from "../../types.js";
-import { toIssueLocation, getRuleSeverity } from "./rule-utils.js";
+import { toIssueLocation, getRuleSeverity } from "./issue-location.js";
 
-export async function ruleOrphanedFiles(ctx: RuleContext): Promise<Issue[]> {
+export function ruleOrphanedFiles(ctx: RuleContext): Issue[] {
   const issues: Issue[] = [];
   const sev = getRuleSeverity(ctx, "orphaned-files", "warning");
 

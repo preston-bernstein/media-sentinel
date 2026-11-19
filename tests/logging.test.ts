@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { createLogger } from "../src/logging.js";
 
+const stderrWrite = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+afterEach(() => {
+  stderrWrite.mockClear();
+});
+
 describe("logging", () => {
-  const stderrWrite = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-
-  afterEach(() => {
-    stderrWrite.mockClear();
-  });
-
-  it("quiet: only warn and error are logged", async () => {
+  it("quiet: only warn and error are logged", () => {
     const logger = createLogger({
       phases: [],
       quiet: true,
@@ -24,7 +24,7 @@ describe("logging", () => {
     expect(stderrWrite).toHaveBeenCalledTimes(2);
   });
 
-  it("verbose: debug is logged", async () => {
+  it("verbose: debug is logged", () => {
     const logger = createLogger({
       phases: [],
       quiet: false,
@@ -39,7 +39,7 @@ describe("logging", () => {
     expect(out).toContain("foo");
   });
 
-  it("info level: includes meta when provided", async () => {
+  it("info level: includes meta when provided", () => {
     const logger = createLogger({
       phases: [],
       quiet: false,
@@ -49,6 +49,6 @@ describe("logging", () => {
     });
     logger.info("msg", { count: 42 });
     const out = stderrWrite.mock.calls[0][0] as string;
-    expect(JSON.parse(out).meta).toEqual({ count: 42 });
+    expect((JSON.parse(out) as { meta: unknown }).meta).toEqual({ count: 42 });
   });
 });

@@ -4,13 +4,66 @@ import { walk, type WalkEntry } from "./walk.js";
 import { classifyExtension } from "./classify.js";
 import { withLimit } from "./concurrency.js";
 import { DEFAULT_CONCURRENCY } from "../constants.js";
-import type { Config, MediaFile, ScanResult, ScanStats } from "../types.js";
+import type { Config, MediaFile, MediaRootConfig, ScanResult, ScanStats } from "../types.js";
 import type { Logger } from "../logging.js";
 
 export interface ScanOptions {
   logger: Logger;
   concurrency?: number;
   maxDepth?: number;
+}
+
+interface FileStat {
+  entry: WalkEntry;
+  size: number;
+  mtimeMs: number;
+}
+
+function toMediaFile(rootName: string, { entry, size, mtimeMs }: FileStat): MediaFile {
+  const ext = path.extname(entry.name).slice(1).toLowerCase();
+  return {
+    id: `${rootName}:${entry.relativePath}`,
+    rootName,
+    relativePath: entry.relativePath,
+    absolutePath: entry.fullPath,
+    sizeBytes: size,
+    mtimeMs,
+    extension: ext,
+    kind: classifyExtension(ext),
+    folderSegments: entry.relativePath.replace(/\\/g, "/").split("/").slice(0, -1),
+  };
+}
+
+/** Walks one root, stat-ing files under the concurrency limit. */
+async function statRoot(
+  config: Config,
+  root: MediaRootConfig,
+  options: ScanOptions,
+  limiter: { concurrency: number; pending: Set<Promise<unknown>> }
+): Promise<{ numDirs: number; fileResults: FileStat[] }> {
+  const excludes = [...(config.globalExcludes ?? []), ...(root.excludeGlobs ?? [])];
+  const fileResults: FileStat[] = [];
+  let numDirs = 0;
+
+  for await (const entry of walk(path.resolve(root.path), {
+    maxDepth: options.maxDepth ?? config.maxDepth,
+    excludes,
+  })) {
+    if (entry.isDirectory) {
+      numDirs++;
+      continue;
+    }
+
+    const p = withLimit(limiter.concurrency, limiter.pending, () =>
+      fs.stat(entry.fullPath).then((s) => ({ entry, size: s.size, mtimeMs: s.mtimeMs }))
+    );
+    p.then((r) => fileResults.push(r)).catch((err: unknown) => {
+      options.logger.warn("Stat failed, skipping file", { path: entry.fullPath, err });
+    });
+  }
+
+  await Promise.all([...limiter.pending]);
+  return { numDirs, fileResults };
 }
 
 export async function scanMediaLibrary(
@@ -25,52 +78,11 @@ export async function scanMediaLibrary(
   const pending = new Set<Promise<unknown>>();
 
   for (const root of config.roots) {
-    const rootPath = path.resolve(root.path);
-    const excludes = [
-      ...(config.globalExcludes ?? []),
-      ...(root.excludeGlobs ?? []),
-    ];
-
-    const fileResults: { entry: WalkEntry; size: number; mtimeMs: number }[] = [];
-
-    for await (const entry of walk(rootPath, {
-      maxDepth: options.maxDepth ?? config.maxDepth,
-      excludes,
-    })) {
-      if (entry.isDirectory) {
-        numDirs++;
-        continue;
-      }
-
-      const p = withLimit(concurrency, pending, () =>
-        fs.stat(entry.fullPath).then((s) => ({ entry, size: s.size, mtimeMs: s.mtimeMs }))
-      );
-      p.then((r) => fileResults.push(r)).catch((err) => {
-        options.logger.warn("Stat failed, skipping file", { path: entry.fullPath, err });
-      });
-    }
-
-    await Promise.all([...pending]);
-
-    for (const { entry, size, mtimeMs } of fileResults) {
-      totalBytes += size;
-      const ext = path.extname(entry.name).slice(1).toLowerCase();
-      const folderSegments = entry.relativePath
-        .replace(/\\/g, "/")
-        .split("/")
-        .slice(0, -1);
-
-      files.push({
-        id: `${root.name}:${entry.relativePath}`,
-        rootName: root.name,
-        relativePath: entry.relativePath,
-        absolutePath: entry.fullPath,
-        sizeBytes: size,
-        mtimeMs,
-        extension: ext,
-        kind: classifyExtension(ext),
-        folderSegments,
-      });
+    const rootScan = await statRoot(config, root, options, { concurrency, pending });
+    numDirs += rootScan.numDirs;
+    for (const stat of rootScan.fileResults) {
+      totalBytes += stat.size;
+      files.push(toMediaFile(root.name, stat));
     }
   }
 
