@@ -8,7 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.join(__dirname, "fixtures", "simple-library");
 const missingSubs = path.join(__dirname, "fixtures", "missing-subs");
 
-const noopLogger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
+const noop = (): void => undefined;
+const noopLogger = { debug: noop, info: noop, warn: noop, error: noop };
 
 describe("analyzer", () => {
   it("builds logical index and finds missing-companion when movie has no subtitle", async () => {
@@ -44,6 +45,9 @@ describe("analyzer", () => {
     expect(analysis.stats.numIssues).toBe(0);
   });
 
+});
+
+describe("analyzer (part 2)", () => {
   it("finds orphaned-file issues for unclassified videos and subtitles", async () => {
     const orphansPath = path.join(__dirname, "fixtures", "orphans", "tv");
     const scan = await scanMediaLibrary(

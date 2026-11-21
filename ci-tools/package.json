@@ -1,0 +1,13 @@
+{
+  "name": "ci-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Gate tools for CI, locked with hashes",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "jscpd": "5.4.3"
+  }
+}

@@ -1,6 +1,6 @@
 import type { RuleContext, Issue, IssueSeverity } from "../../types.js";
-import { toIssueLocation, getRuleSeverity } from "./rule-utils.js";
-import type { FileLike } from "./rule-utils.js";
+import { toIssueLocation, getRuleSeverity } from "./issue-location.js";
+import type { FileLike } from "./issue-location.js";
 
 /** Item with key and file lists (movie or episode). Files have id for issue ids. */
 interface ItemWithFiles {
@@ -54,7 +54,7 @@ function pushMissingCompanionIssues(
   }
 }
 
-export async function ruleMissingCompanions(ctx: RuleContext): Promise<Issue[]> {
+export function ruleMissingCompanions(ctx: RuleContext): Issue[] {
   const issues: Issue[] = [];
   const sev = getRuleSeverity(ctx, "missing-companions", "info");
 

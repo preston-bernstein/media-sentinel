@@ -33,6 +33,24 @@ program
     throw err;
   });
 
+interface CliOptions {
+  root?: string[];
+  config?: string;
+  exclude?: string[];
+  scan?: boolean;
+  analyze?: boolean;
+  report?: boolean;
+  apply?: boolean;
+  input?: string;
+  output?: string;
+  json?: boolean;
+  dryRun?: boolean;
+  verbose?: boolean;
+  quiet?: boolean;
+  concurrency?: number;
+  maxDepth?: number;
+}
+
 /**
  * Parse argv and run the pipeline. Returns exit code (EXIT_OK, EXIT_ISSUES_FOUND, EXIT_RUNTIME_ERROR, or Commander's 2 for usage).
  * Exported for tests.
@@ -46,7 +64,7 @@ export async function runCli(argv: string[]): Promise<number> {
     throw err;
   }
 
-  const opts = program.opts();
+  const opts = program.opts<CliOptions>();
 
   const phases: Phase[] = [];
   if (opts.scan) phases.push("scan");
@@ -92,4 +110,4 @@ export async function runEntryPoint(): Promise<void> {
   }
 }
 
-runEntryPoint();
+void runEntryPoint();

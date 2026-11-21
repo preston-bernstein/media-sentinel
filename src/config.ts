@@ -10,42 +10,39 @@ export interface LoadConfigOptions {
   excludeGlobs?: string[];
 }
 
-export async function loadConfig(opts: LoadConfigOptions): Promise<Config> {
-  let base: Record<string, unknown> = {};
+async function readBaseConfig(file: string | undefined): Promise<Record<string, unknown>> {
+  if (!file) return {};
+  const raw = await fs.readFile(file, "utf8");
+  return file.endsWith(".yaml") || file.endsWith(".yml")
+    ? (parseYaml(raw) as Record<string, unknown>)
+    : (JSON.parse(raw) as Record<string, unknown>);
+}
 
-  if (opts.path) {
-    const raw = await fs.readFile(opts.path, "utf8");
-    base =
-      opts.path.endsWith(".yaml") || opts.path.endsWith(".yml")
-        ? (parseYaml(raw) as Record<string, unknown>)
-        : (JSON.parse(raw) as Record<string, unknown>);
-  }
+function rootsFromPaths(paths: string[], rootsFromFile: MediaRootConfig[]): MediaRootConfig[] {
+  return paths.map((p, i) => {
+    const fromFile = rootsFromFile[i];
+    return {
+      name: fromFile?.name ?? `root-${i + 1}`,
+      path: path.resolve(p),
+      kind: fromFile?.kind ?? "other",
+      namingStyle: fromFile?.namingStyle,
+      episodePatterns: fromFile?.episodePatterns,
+      excludeGlobs: fromFile?.excludeGlobs ?? [],
+    };
+  });
+}
 
-  const rootsFromFile = Array.isArray(base.roots)
-    ? (base.roots as MediaRootConfig[])
-    : [];
-
-  let roots: MediaRootConfig[];
-
+function resolveRoots(base: Record<string, unknown>, opts: LoadConfigOptions): MediaRootConfig[] {
+  const rootsFromFile = Array.isArray(base.roots) ? (base.roots as MediaRootConfig[]) : [];
   if (opts.rootsFromCli && opts.rootsFromCli.length > 0) {
-    roots = opts.rootsFromCli.map((p, i) => {
-      const resolved = path.resolve(p);
-      const fromFile = rootsFromFile[i];
-      return {
-        name: (fromFile?.name as string) ?? `root-${i + 1}`,
-        path: resolved,
-        kind: (fromFile?.kind as MediaRootConfig["kind"]) ?? "other",
-        namingStyle: fromFile?.namingStyle,
-        episodePatterns: fromFile?.episodePatterns,
-        excludeGlobs: fromFile?.excludeGlobs ?? [],
-      };
-    });
-  } else {
-    roots = rootsFromFile.map((r) => ({
-      ...r,
-      path: path.resolve(r.path),
-    }));
+    return rootsFromPaths(opts.rootsFromCli, rootsFromFile);
   }
+  return rootsFromFile.map((r) => ({ ...r, path: path.resolve(r.path) }));
+}
+
+export async function loadConfig(opts: LoadConfigOptions): Promise<Config> {
+  const base = await readBaseConfig(opts.path);
+  const roots = resolveRoots(base, opts);
 
   if (roots.length === 0) {
     throw new Error("No media roots configured. Use --root <path> or set roots in config.");

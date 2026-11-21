@@ -57,7 +57,7 @@ export async function* walk(
     try {
       const dirents = await fs.readdir(dir, { withFileTypes: true });
       entries = dirents.map((d) => ({ name: d.name, isDirectory: d.isDirectory() }));
-    } catch (err) {
+    } catch {
       return;
     }
 

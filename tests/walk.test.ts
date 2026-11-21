@@ -38,6 +38,9 @@ describe("walk", () => {
     expect(entries.some((p) => p.endsWith("Inception (2010).mkv"))).toBe(false);
   });
 
+});
+
+describe("walk (part 2)", () => {
   it("respects maxDepth", async () => {
     const entries: string[] = [];
     for await (const e of walk(path.join(fixtures, "tv"), { maxDepth: 0 })) {

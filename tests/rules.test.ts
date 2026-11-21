@@ -5,7 +5,8 @@ import { scanMediaLibrary } from "../src/scanner/index.js";
 import { analyzeScanResult } from "../src/analyzer/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const noopLogger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
+const noop = (): void => undefined;
+const noopLogger = { debug: noop, info: noop, warn: noop, error: noop };
 
 describe("rules", () => {
   it("duplicates: flags multiple videos for same movie", async () => {
@@ -30,6 +31,9 @@ describe("rules", () => {
     expect(structure.length).toBeGreaterThanOrEqual(1);
   });
 
+});
+
+describe("rules (part 2)", () => {
   it("respects rules.enabled false", async () => {
     const missingPath = path.join(__dirname, "fixtures", "missing-subs", "movies");
     const scan = await scanMediaLibrary(
@@ -58,6 +62,9 @@ describe("rules", () => {
     expect(missing?.severity).toBe("error");
   });
 
+});
+
+describe("rules (part 3)", () => {
   it("missing-companions: subtitle with no video (movie)", async () => {
     const path = await import("node:path");
     const subOnly = path.join(__dirname, "fixtures", "sub-only-movie");

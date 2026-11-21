@@ -9,7 +9,6 @@ import type { ScanResult } from "../src/types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.join(__dirname, "fixtures", "simple-library");
-const noopLogger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
 
 const minimalScan = (roots: { name: string; path: string; kind: string }[]): ScanResult => ({
   kind: "scan",
@@ -52,6 +51,9 @@ roots:
     }
   });
 
+});
+
+describe("pipeline (part 2)", () => {
   it("reads input scan artifact and skips scan phase", async () => {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ms-"));
     try {
@@ -75,6 +77,9 @@ roots:
     }
   });
 
+});
+
+describe("pipeline (part 3)", () => {
   it("reads input analysis artifact and runs report only", async () => {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ms-"));
     try {
@@ -108,6 +113,9 @@ roots:
     }
   });
 
+});
+
+describe("pipeline (part 4)", () => {
   it("throws when analyze requested but no scan result", async () => {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ms-"));
     try {
@@ -146,6 +154,9 @@ roots:
     }
   });
 
+});
+
+describe("pipeline (part 5)", () => {
   it("runs apply phase and logs warn", async () => {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ms-"));
     try {
@@ -180,13 +191,16 @@ roots:
         quiet: true,
       });
       const content = await fs.readFile(outPath, "utf8");
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(content) as { kind: string };
       expect(parsed.kind).toBe("scan");
     } finally {
       await fs.rm(tmp, { recursive: true, force: true });
     }
   });
 
+});
+
+describe("pipeline (part 6)", () => {
   it("writes analysis artifact when last phase is analyze and outputPath set", async () => {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "ms-"));
     try {
@@ -203,7 +217,7 @@ roots:
         quiet: true,
       });
       const content = await fs.readFile(outPath, "utf8");
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(content) as { kind: string };
       expect(parsed.kind).toBe("analysis");
     } finally {
       await fs.rm(tmp, { recursive: true, force: true });

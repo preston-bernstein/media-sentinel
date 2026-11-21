@@ -6,7 +6,7 @@ import type {
   MovieItem,
   EpisodeItem,
 } from "../../types.js";
-import { parseMovieFile, parseEpisodeFile } from "./parse-path.js";
+import { parseMovieFile, parseEpisodeFile, type MovieRef, type EpisodeRef } from "./parse-path.js";
 
 /** Item shape that has file arrays by role (movie and episode both use this). */
 interface MediaItemWithFiles {
@@ -36,6 +36,43 @@ function pushFileByRole(
   }
 }
 
+function emptyFiles(): MediaItemWithFiles {
+  return { videoFiles: [], subtitleFiles: [], nfoFiles: [], otherFiles: [] };
+}
+
+function newMovieItem(ref: MovieRef, file: MediaFile): MovieItem {
+  return {
+    key: ref.movieKey,
+    title: ref.title,
+    year: ref.year,
+    rootName: file.rootName,
+    relativeDir: file.folderSegments.join("/"),
+    ...emptyFiles(),
+  };
+}
+
+function newEpisodeItem(ref: EpisodeRef, file: MediaFile): EpisodeItem {
+  return {
+    key: ref.episodeKey,
+    seriesTitle: ref.seriesTitle,
+    seriesKey: ref.seriesKey,
+    seasonNumber: ref.seasonNumber,
+    episodeNumber: ref.episodeNumber,
+    rootName: file.rootName,
+    relativeDir: file.folderSegments.join("/"),
+    ...emptyFiles(),
+  };
+}
+
+function getOrCreate<T>(groups: Map<string, T>, key: string, create: () => T): T {
+  let item = groups.get(key);
+  if (!item) {
+    item = create();
+    groups.set(key, item);
+  }
+  return item;
+}
+
 /**
  * Builds a Plex-oriented logical index from a raw scan: groups files into
  * movies and episodes by root kind and naming, and collects unclassified
@@ -49,68 +86,32 @@ export function buildLogicalIndex(scan: ScanResult, config: Config): LogicalInde
 
   const rootByName = new Map(config.roots.map((r) => [r.name, r]));
 
+  const addUnclassified = (file: MediaFile): void => {
+    if (file.kind === "video") unclassifiedVideos.push(file);
+    if (file.kind === "subtitle") unclassifiedSubtitles.push(file);
+  };
+
   for (const file of scan.files) {
     const root = rootByName.get(file.rootName);
     const kind = root?.kind ?? "other";
 
-    if (kind === "movies") {
-      const ref = parseMovieFile(file, root!);
-      if (!ref) {
-        if (file.kind === "video") unclassifiedVideos.push(file);
-        if (file.kind === "subtitle") unclassifiedSubtitles.push(file);
-        continue;
+    if (root && kind === "movies") {
+      const ref = parseMovieFile(file);
+      if (ref) {
+        pushFileByRole(getOrCreate(moviesByKey, ref.movieKey, () => newMovieItem(ref, file)), file, ref.role);
+      } else {
+        addUnclassified(file);
       }
-      let item = moviesByKey.get(ref.movieKey);
-      if (!item) {
-        const relativeDir = file.folderSegments.join("/");
-        item = {
-          key: ref.movieKey,
-          title: ref.title,
-          year: ref.year,
-          rootName: file.rootName,
-          relativeDir,
-          videoFiles: [],
-          subtitleFiles: [],
-          nfoFiles: [],
-          otherFiles: [],
-        };
-        moviesByKey.set(ref.movieKey, item);
+    } else if (root && kind === "tv") {
+      const ref = parseEpisodeFile(file);
+      if (ref) {
+        pushFileByRole(getOrCreate(episodesByKey, ref.episodeKey, () => newEpisodeItem(ref, file)), file, ref.role);
+      } else {
+        addUnclassified(file);
       }
-      pushFileByRole(item, file, ref.role);
-      continue;
+    } else {
+      addUnclassified(file);
     }
-
-    if (kind === "tv") {
-      const ref = parseEpisodeFile(file, root!);
-      if (!ref) {
-        if (file.kind === "video") unclassifiedVideos.push(file);
-        if (file.kind === "subtitle") unclassifiedSubtitles.push(file);
-        continue;
-      }
-      let item = episodesByKey.get(ref.episodeKey);
-      if (!item) {
-        const relativeDir = file.folderSegments.join("/");
-        item = {
-          key: ref.episodeKey,
-          seriesTitle: ref.seriesTitle,
-          seriesKey: ref.seriesKey,
-          seasonNumber: ref.seasonNumber,
-          episodeNumber: ref.episodeNumber,
-          rootName: file.rootName,
-          relativeDir,
-          videoFiles: [],
-          subtitleFiles: [],
-          nfoFiles: [],
-          otherFiles: [],
-        };
-        episodesByKey.set(ref.episodeKey, item);
-      }
-      pushFileByRole(item, file, ref.role);
-      continue;
-    }
-
-    if (file.kind === "video") unclassifiedVideos.push(file);
-    if (file.kind === "subtitle") unclassifiedSubtitles.push(file);
   }
 
   return {

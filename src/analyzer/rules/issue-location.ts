@@ -23,5 +23,5 @@ export function getRuleSeverity(
   defaultSeverity: IssueSeverity
 ): IssueSeverity {
   const entry = ctx.config.rules?.[ruleId];
-  return (entry?.severity as IssueSeverity) ?? defaultSeverity;
+  return entry?.severity ?? defaultSeverity;
 }

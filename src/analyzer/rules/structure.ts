@@ -1,10 +1,10 @@
 import type { RuleContext, Issue } from "../../types.js";
-import { toIssueLocation, getRuleSeverity } from "./rule-utils.js";
+import { toIssueLocation, getRuleSeverity } from "./issue-location.js";
 
 /** Plex expects TV: Show Name/Season XX/... */
 const SEASON_FOLDER_REGEX = /^Season\s*\d+/i;
 
-export async function ruleSuspiciousStructure(ctx: RuleContext): Promise<Issue[]> {
+export function ruleSuspiciousStructure(ctx: RuleContext): Issue[] {
   const issues: Issue[] = [];
   const sev = getRuleSeverity(ctx, "suspicious-structure", "info");
 
